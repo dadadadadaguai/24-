@@ -1,9 +1,6 @@
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
-
-from problem1 import read_excel
 
 
 # 读取数据
@@ -18,7 +15,7 @@ def get_dates(data):
     temperature = data.iloc[:, 0]  # 温度
     frequency = data.iloc[:, 1]  # 频率
     flux_density = data.iloc[:, 4:]  # 磁通密度
-    flux_density_max = flux_density.max(axis=1).values # 磁通密度峰值
+    flux_density_max = flux_density.max(axis=1).values  # 磁通密度峰值
     loss = data.iloc[:, 2]  # 磁芯损耗
     return temperature, frequency, loss, flux_density_max
 
@@ -57,7 +54,7 @@ def least_squares(data):
 def plot_loss_difference(data):
     temperature, frequency, actual_loss, flux_density_max = get_dates(data)
     predicted_loss = least_squares(data)
-    #计算决定系数
+    # 计算决定系数
     r2 = 1 - np.sum((actual_loss - predicted_loss) ** 2) / np.sum((actual_loss - np.mean(actual_loss)) ** 2)
     # print(f"决定系数: {r2}")    0.995456411158246
     # # 绘制实际损耗与预测损耗的比较
@@ -75,6 +72,8 @@ def plot_loss_difference(data):
     # plt.legend()
     # plt.grid(True)
     # plt.show()
+
+
 # 幂函数拟合
 if __name__ == '__main__':
     data = get_magnetic_density()

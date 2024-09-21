@@ -3,8 +3,6 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
 
-from problem1 import read_excel
-
 
 # 读取数据
 def get_magnetic_density():
