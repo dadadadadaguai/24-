@@ -1,13 +1,11 @@
 import numpy as np
 import pandas as pd
-import seaborn as sns
-from matplotlib import pyplot as plt
 from mkl_fft import fft
 from scipy.stats import skew, kurtosis
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, recall_score, f1_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score, recall_score, f1_score, classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
@@ -139,10 +137,12 @@ def merge_time_and_frequency_features(data):
 
 
 # PCA降维
-def pca_reduction(data):
+def pca_reduction(data, test_data):
     features = merge_time_and_frequency_features(data)
+    test_features = merge_time_and_frequency_features(test_data)
     scaler = StandardScaler()
     features = scaler.fit_transform(features)
+    test_features = scaler.transform(test_features)
     # print('数据原始维度是%d维' % (features.shape[1]))
     # 观察累计解释方差比随主成分数量增加的变化曲线，选择“肘部”位置作为主成分数量。为2
     # pca = PCA().fit(features)
@@ -152,15 +152,20 @@ def pca_reduction(data):
     # plt.show()
     # PCA降维
     pca = PCA(n_components=5)  # 自动按照内部函数的选择维度方法
-    pca_feature = pca.fit_transform(features)
+    train_pca_feature = pca.fit_transform(features)
+    test_pca_feature = pca.transform(test_features)
     # print(pca.explained_variance_ratio_.sum())  所有保留主成分的方差占比之和为0.999997647807451
-    return pca_feature
+    return train_pca_feature, test_pca_feature
 
 
 # 三分类
-def three_classification(data, pca_features):
+def three_classification(data, pca_features, test_features):
+    # sheet1对应测试集
+    test_features = pd.DataFrame(test_features)
+    test_features = test_features.iloc[60:80]
+    print(test_features)
     newX = pca_features
-    data['励磁波形'] = data['励磁波形'].map({'正弦波': 0, '三角波': 1, '梯形波': 2})
+    data['励磁波形'] = data['励磁波形'].map({'正弦波': 1, '三角波': 2, '梯形波': 3})
     # 分离X和Y
     X = data[data.columns[4:]]
     Y = data['励磁波形']
@@ -188,32 +193,32 @@ def three_classification(data, pca_features):
         rec = recall_score(Y_test, y_pred, average='micro')
         f1 = f1_score(Y_test, y_pred, average='micro')
         classification = classification_report(Y_test, y_pred)
+        print(f'{name}模型在训练集上的预测结果：')
         print(f'{name}模型评价结果：')
         print("ACC", acc)
         print("REC", rec)
         print("F-score", f1)
         print(classification)
 
-        # 生成混淆矩阵
-        cm = confusion_matrix(Y_test, y_pred)
-        print("混淆矩阵：")
-        print(cm)
-
-        # 绘制混淆矩阵的热力图
-        plt.figure(figsize=(8, 6))
-        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False)
-        plt.xlabel('预测标签')
-        plt.ylabel('真实标签')
-        plt.title('混淆矩阵热力图')
-        plt.show()
+    for name, model in models.items():
+        print(test_features.shape)
+        # 使用训练好的模型进行预测
+        test_predictions = model.predict(test_features)
+        # 模型评估
+        print(test_predictions)
+        # 输出分类结果到附件四（保存为CSV文件）
+        # output = pd.DataFrame({'样本序号': test_data.iloc[:, 0], '波形分类': test_predictions})
+        # output.to_csv('附件四.csv', index=False)
 
 
 def t1():
-    data = read_excel('excel/train1.xlsx', '材料1')
+    data = read_excel('excel/train1.xlsx', '材料4')
+    test_data = read_excel('excel/test2.xlsx', '测试集')
+    print(test_data.shape)
     temperature, frequency, core_loss, waveform_type, flux_density = analysis_magnetic_density(data)
     # features = get_magnetic_density_feature(temperature, frequency, core_loss, waveform_type, flux_density, sheet1)
-    pca_features = pca_reduction(data)
-    three_classification(data, pca_features)
+    train_pca_features, test_pca_features = pca_reduction(data, test_data)
+    three_classification(data, train_pca_features, test_pca_features)
 
 
 if __name__ == '__main__':
