@@ -165,11 +165,15 @@ def steinmetz_model(B, material, temperature, waveform, frequency):
         5] * material * temperature + B[6] * material * waveform + +B[7] * temperature * waveform + B[
         8] * material * temperature * waveform
 
-
+def get_result_problem(data):
+    # 当温度为90，材料为材料4，波形为正形波，计算最低的磁芯损耗
+    result = data[(data['温度'] == 90) & (data['材料'] == 4) & (data['励磁波形'] == 1)]
+    return result['磁芯损耗'].min()
 #
 def t3():
     data = read_merged_data()
-    compute_temperature_loss_normality(data)
+    # compute_temperature_loss_normality(data)
+    logger.info(get_result_problem(data))
 
 
 if __name__ == '__main__':
