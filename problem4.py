@@ -115,7 +115,7 @@ def model(merged_data, test_data):
     # 分离数据
     X = merged_data.drop('磁芯损耗', axis=1)
     y = merged_data['磁芯损耗']
-    # 划分数据集
+    # 划分数据集:训练集：验证集，8:2
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2)
     # 初始化XGBoost回归模型
@@ -130,7 +130,7 @@ def model(merged_data, test_data):
     #     learning_rate=0.1,
     #     max_depth=8,
     #     random_state=42)
-    # 进行交叉验证
+    # 进行5折交叉验证
     cv_scores = cross_val_score(
         xgb_model,
         X_train,
