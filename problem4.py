@@ -29,10 +29,13 @@ def extract_time_domain_features(data_flux_density):
     features = {}
     # 计算时域特征
     features['mean'] = np.mean(data_flux_density, axis=1)
+    features['std'] = np.std(data_flux_density, axis=1)
     features['peak'] = np.max(data_flux_density, axis=1)
     features['peak_to_peak'] = np.ptp(data_flux_density, axis=1)
     features['skewness'] = skew(data_flux_density, axis=1)
     features['kurtosis'] = kurtosis(data_flux_density, axis=1)
+    features['waveform_factor'] = np.abs(
+        np.diff(np.unwrap(np.angle(fft(data_flux_density))), axis=1)).mean(axis=1)  # 确保输出是一维 波形因子
     features['rms'] = np.sqrt(np.mean(data_flux_density ** 2, axis=1))  # 均方根
     return pd.DataFrame(features)
 
@@ -43,6 +46,9 @@ def extract_frequency_domain_features(data_flux_density):
     # 对每行数据进行FFT
     fft_data = fft(data_flux_density)
     # 提取频域特征（主频、能量等）
+    features['fft_0'] = np.real(fft_data[:, 0])
+    features['fft_1'] = np.real(fft_data[:, 1])
+    features['fft_2'] = np.real(fft_data[:, 2])
     features['dominant_frequency'] = np.argmax(np.abs(fft_data), axis=1)
     features['spectral_energy'] = np.sum(np.abs(fft_data) ** 2, axis=1)
     return pd.DataFrame(features)
@@ -77,9 +83,12 @@ def get_merged_data(data, flux_density_pca):
 
 def plot_pca(flux_density_features):
     pca = PCA().fit(flux_density_features)
-    plt.plot(np.cumsum(pca.explained_variance_ratio_))
-    plt.xlabel('Number of Components')
-    plt.ylabel('Cumulative Explained Variance')
+    plt.rcParams['font.sans-serif'] = ['SimHei']  # 中文支持
+    plt.rcParams['axes.unicode_minus'] = False
+    plt.title('累计解释方差比随主成分数量增加的变化曲线')
+    plt.plot(np.cumsum(pca.explained_variance_ratio_), marker='o')
+    plt.xlabel('主成分数量')
+    plt.ylabel('累计解释方差比')
     plt.show()
 
 
@@ -153,8 +162,8 @@ def model(merged_data, test_data):
     y_pred_test = xgb_model.predict(test_data)
     logger.info(y_pred_test)
     # 将预测值写入一个新的文件的磁芯损耗列中
-    test_data['预测值'] = y_pred_test
-    test_data.to_excel('test_data3.xlsx', index=False)
+    # test_data['预测值'] = y_pred_test
+    # test_data.to_excel('test_data3.xlsx', index=False)
 
 
 def model2(merged_data, test_data):
