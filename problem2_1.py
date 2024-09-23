@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
 
 
@@ -20,16 +21,16 @@ def get_dates(data):
     return temperature, frequency, loss, flux_density_max
 
 
-# 定义修正后的斯坦麦茨方程模型，
-def steinmetz_model(T, f, B, k0, k1, k2, a, b):
+# 定义修正后的斯坦麦茨方程模型，加一个截距
+def steinmetz_model(T, f, B, k0, k1, k2, a, b, m):
     k_T = k0 + k1 * T + k2 * T ** 2  # 温度相关的 k(T)
-    return k_T * f ** a * B ** b
+    return k_T * f ** a * B ** b + m
 
 
 # 拟合函数
-def fit_function(X, k0, k1, k2, a, b):
+def fit_function(X, k0, k1, k2, a, b,m):
     T, f, B = X
-    return steinmetz_model(T, f, B, k0, k1, k2, a, b)
+    return steinmetz_model(T, f, B, k0, k1, k2, a, b,m)
 
 
 # 最小二乘法拟合
@@ -39,14 +40,14 @@ def least_squares(data):
     print(temperature.shape, frequency.shape, flux_density_max.shape)
     X_data = np.vstack((temperature, frequency, flux_density_max))
     # 初始猜测参数
-    initial_guess = [1e-6, 1e-8, 1e-10, 1.5, 2.0]
+    initial_guess = [1e-6, 1e-8, 1e-10, 1.5, 2.0,0.5]
     # 使用 curve_fit 进行拟合
     params, covariance = curve_fit(fit_function, X_data, loss, p0=initial_guess)
     # 提取拟合参数
-    k0, k1, k2, a, b = params
-    print(f"拟合结果: k0 = {k0}, k1 = {k1}, k2 = {k2}, a = {a}, b = {b}")
+    k0, k1, k2, a, b,m = params
+    print(f"拟合结果: k0 = {k0}, k1 = {k1}, k2 = {k2}, a = {a}, b = {b},m={m}")
     # 计算预测损耗
-    predicted_loss = steinmetz_model(temperature, frequency, flux_density_max, k0, k1, k2, a, b)
+    predicted_loss = steinmetz_model(temperature, frequency, flux_density_max, k0, k1, k2, a, b,m)
     return predicted_loss
 
 
@@ -56,23 +57,23 @@ def plot_loss_difference(data):
     predicted_loss = least_squares(data)
     # 计算决定系数
     r2 = 1 - np.sum((actual_loss - predicted_loss) ** 2) / np.sum((actual_loss - np.mean(actual_loss)) ** 2)
-    # 添加截距 0.9955631865947486
-    # print(f"决定系数: {r2}")    0.995456411158246
-    # # 绘制实际损耗与预测损耗的比较
-    # plt.rcParams['font.sans-serif'] = ['SimHei']  # 中文支持
-    # plt.rcParams['axes.unicode_minus'] = False
-    # # 计算残差
-    # residuals = actual_loss - predicted_loss
-    # # 绘制残差图
-    # plt.figure(figsize=(10, 6))
-    # plt.scatter(np.arange(len(residuals)), residuals, label='残差')
-    # plt.axhline(y=0, color='r', linestyle='--')  # 添加零线
-    # plt.xlabel('样本点')
-    # plt.ylabel(r'磁芯损耗差距（w/m$^3$）')
-    # plt.title('实际磁芯损耗与预测磁芯损耗对比')
-    # plt.legend()
-    # plt.grid(True)
-    # plt.show()
+    print(f"决定系数2_1: {r2}")
+    # 0.995456411158246
+    # 绘制实际损耗与预测损耗的比较
+    plt.rcParams['font.sans-serif'] = ['SimHei']  # 中文支持
+    plt.rcParams['axes.unicode_minus'] = False
+    # 计算残差
+    residuals = actual_loss - predicted_loss
+    # 绘制残差图
+    plt.figure(figsize=(10, 6))
+    plt.scatter(np.arange(len(residuals)), residuals, label='残差')
+    plt.axhline(y=0, color='r', linestyle='--')  # 添加零线
+    plt.xlabel('样本点')
+    plt.ylabel(r'磁芯损耗差距（w/m$^3$）')
+    plt.title('实际磁芯损耗与预测磁芯损耗对比')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 
 # 幂函数拟合

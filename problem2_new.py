@@ -22,15 +22,15 @@ def get_dates(data):
 
 
 # 定义修正后的斯坦麦茨方程模型（幂函数形式）
-def steinmetz_model(T, f, B, k0, k1, k2, a, b):
+def steinmetz_model(T, f, B, k0, k1, k2, a, b,m):
     k_T = k0 * T ** k1  # 温度相关的 k(T)，幂函数形式
-    return k_T * f ** a * B ** b
+    return k_T * f ** a * B ** b+m
 
 
 # 拟合函数
-def fit_function(X, k0, k1, k2, a, b):
+def fit_function(X, k0, k1, k2, a, b,m):
     T, f, B = X.T  # 确保解包正确
-    return steinmetz_model(T, f, B, k0, k1, k2, a, b)
+    return steinmetz_model(T, f, B, k0, k1, k2, a, b,m)
 
 
 # 最小二乘法拟合
@@ -44,7 +44,7 @@ def least_squares(data):
     print("X_data shape:", X_data.shape)
 
     # 初始猜测参数
-    initial_guess = [1e-6, 1e-8, 1e-10, 1.5, 2.0]
+    initial_guess = [1e-6, 1e-8, 1e-10, 1.5, 2.0, 0.5]
 
     # 使用 curve_fit 进行拟合
     try:
@@ -54,11 +54,11 @@ def least_squares(data):
         return None
 
     # 提取拟合参数
-    k0, k1, k2, a, b = params
-    print(f"拟合结果: k0 = {k0}, k1 = {k1}, k2 = {k2}, a = {a}, b = {b}")
+    k0, k1, k2, a, b,m = params
+    print(f"拟合结果: k0 = {k0}, k1 = {k1}, k2 = {k2}, a = {a}, b = {b},m={m}")
 
     # 计算预测损耗
-    predicted_loss = steinmetz_model(temperature, frequency, flux_density_max, k0, k1, k2, a, b)
+    predicted_loss = steinmetz_model(temperature, frequency, flux_density_max, k0, k1, k2, a, b,m)
     return predicted_loss
 
 
@@ -72,7 +72,7 @@ def plot_loss_difference(data):
     # 计算决定系数
     r2 = 1 - np.sum((actual_loss - predicted_loss) ** 2) / np.sum((actual_loss - np.mean(actual_loss)) ** 2)
     print(f"R² = {r2}")
-    # 绘制实际损耗与预测损耗的比较
+    # # 绘制实际损耗与预测损耗的比较
     plt.rcParams['font.sans-serif'] = ['SimHei']  # 中文支持
     plt.rcParams['axes.unicode_minus'] = False
     # 计算残差
