@@ -50,9 +50,12 @@ def extract_frequency_domain_features(data_flux_density):
 
 # 时域和频域特征合并,这里从5切割是因为前面添加了材料类别标记列
 def merge_time_and_frequency_features(data):
-    freq_features = extract_time_domain_features(data.iloc[:, 5:].values)
-    time_features = extract_frequency_domain_features(data.iloc[:, 5:].values)
-    return pd.concat([time_features, freq_features], axis=1)
+    flux_density = data.iloc[:, 5:]  # 磁通密度
+    flux_density_max = flux_density.max(axis=1).values  # 磁通密度峰值
+    # freq_features = extract_time_domain_features(data.iloc[:, 5:].values)
+    # time_features = extract_frequency_domain_features(data.iloc[:, 5:].values)
+    # return pd.concat([time_features, freq_features], axis=1)
+    return flux_density_max
 
 
 # pca降维
@@ -112,8 +115,6 @@ def model_autoMl(merged_data):
 
 
 # 采用XGBoost
-
-
 def model(merged_data, test_data):
     # 分离数据
     X = merged_data.drop('磁芯损耗', axis=1)
@@ -159,7 +160,7 @@ def model(merged_data, test_data):
     logger.info(y_pred_test)
     # 将预测值写入一个新的文件的磁芯损耗列中
     test_data['预测值'] = y_pred_test
-    test_data.to_excel('test_data3.xlsx', index=False)
+    test_data.to_excel('test_data_9_24.xlsx', index=False)
 
 
 def model2(merged_data, test_data):
@@ -206,7 +207,7 @@ def model2(merged_data, test_data):
     logger.info(y_pred_test)
     # 将预测值写入新的文件
     test_data['预测值'] = y_pred_test
-    test_data.to_excel('test_data3.xlsx', index=False)
+    test_data.to_excel('test_data_9_24.xlsx', index=False)
 # 绘制能体现预测值和真实值的散点密度图
 
 
@@ -257,8 +258,8 @@ def tes_data_process(data):
     data['材料'] = data['材料'].map({'材料1': 1, '材料2': 2, '材料3': 3, '材料4': 4})
     flux_density_features = merge_time_and_frequency_features(
         data)
-    flux_density = flux_density_pca(flux_density_features)
-    merged_data = get_merged_data(data, flux_density)
+    # flux_density = flux_density_pca(flux_density_features)
+    merged_data = get_merged_data(data, flux_density_features)
     # 删除磁芯损耗列
     merged_data = merged_data.drop('磁芯损耗', axis=1)
     return merged_data
@@ -271,8 +272,8 @@ def t4():
     flux_density_features = merge_time_and_frequency_features(
         train_data)  # 获取磁芯密度全部特征
     # 磁芯密度全部特征pca降维
-    flux_density = flux_density_pca(flux_density_features)
-    train_merged_data = get_merged_data(train_data, flux_density)  # 处理完的特征
+    # flux_density = flux_density_pca(flux_density_features)
+    train_merged_data = get_merged_data(train_data, flux_density_features)  # 处理完的特征
     # 预测模型
     model(train_merged_data, test_merged_data)
 
